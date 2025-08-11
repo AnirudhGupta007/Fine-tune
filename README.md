@@ -22,7 +22,7 @@ Your anxiety stems not from your career itself, but from your judgment of it. Th
 The core challenge of this project was not simply to make a Large Language Model sound like a philosopher, but to teach it to reason like one. This required moving beyond basic text generation to imbue the model with a specific, abstract framework—Stoicism.
 This was achieved through two main scripts:
 dataset.py: Automates the creation of a high-quality dataset by programmatically transforming the raw text of Meditations into structured instruction-response pairs using an external LLM API.
-finetune.ipynb: Leverages the high-performance Unsloth library to efficiently fine-tune a Llama 3-8B model with QLoRA on the generated dataset, runnable on a single consumer GPU.
+finetune.ipynb: Leverages the high-performance Unsloth library to efficiently fine-tune a Llama 3-8B model with QLoRA, runnable on a single consumer GPU.
 🛠️ Tech Stack
 Data Generation: Groq API (Llama 3 70B), Python, PyMuPDF
 Fine-Tuning: Unsloth, PyTorch, Hugging Face (Transformers, PEFT, TRL, Datasets)
@@ -80,5 +80,3 @@ Expand the Pantheon: Fine-tune models on the works of other philosophers (e.g., 
 Quantitative Evaluation: Implement an evaluation framework using another powerful LLM (like GPT-4) as a "judge" to score the philosophical coherence of the model's responses.
 License
 This project is licensed under the MIT License.
-code
-Code
