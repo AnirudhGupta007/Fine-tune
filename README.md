@@ -7,98 +7,78 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
 An end-to-end fine-tuning project that transforms a Llama 3-8B model into a Stoic philosopher. This model, trained on Marcus Aurelius's *Meditations*, can analyze modern problems through a framework of Stoic reasoning, providing insightful, in-character guidance.
+
+## 🚀 Demo Output
+
+Here is an example of the model responding to a modern-day problem after being fine-tuned:
+
+```text
+--- Your Modern Problem ---
+I feel so much anxiety about my career. I'm constantly worried I'm not doing enough or that I'll fall behind everyone else.
+
+--- Marcus Aurelius's Response ---
+Your anxiety stems not from your career itself, but from your judgment of it. The progress of others is external to you and not within your control. Your worry is a creation of your own mind. Discard this judgment and the feeling of injury vanishes. Focus on the task before you, perform it with diligence and virtue, and you will find that the tranquility you seek comes not from outpacing others, but from mastering your own thoughts.
 ✨ Project Overview
 The core challenge of this project was not simply to make a Large Language Model sound like a philosopher, but to teach it to reason like one. This required moving beyond basic text generation to imbue the model with a specific, abstract framework—Stoicism.
-This was achieved through three key stages:
-Automated Dataset Creation: Programmatically transforming the raw, unstructured text of Meditations into a high-quality, structured dataset for instruction fine-tuning.
-Optimized Fine-Tuning: Using the high-performance Unsloth library to efficiently fine-tune a Llama 3-8B model with QLoRA on a single consumer GPU.
-Qualitative Evaluation: Assessing the model's ability to provide coherent, philosophically-sound advice on novel problems.
-🛠️ Tech Stack & Architecture
-This project leverages a modern, efficient stack for LLM fine-tuning.
-Data Generation: Groq API (Llama 3 70B), Python, PyMuPDF (for PDF parsing)
+This was achieved through two main scripts:
+dataset.py: Automates the creation of a high-quality dataset by programmatically transforming the raw text of Meditations into structured instruction-response pairs using an external LLM API.
+finetune.ipynb: Leverages the high-performance Unsloth library to efficiently fine-tune a Llama 3-8B model with QLoRA on the generated dataset, runnable on a single consumer GPU.
+🛠️ Tech Stack
+Data Generation: Groq API (Llama 3 70B), Python, PyMuPDF
 Fine-Tuning: Unsloth, PyTorch, Hugging Face (Transformers, PEFT, TRL, Datasets)
 Quantization: bitsandbytes for 4-bit model loading (QLoRA)
-Compute: Google Colab (NVIDIA T4 GPU)
-Architectural Flow
+Environment: Jupyter Notebook (.ipynb), Google Colab (or local with GPU)
+📂 Project Structure
 code
 Code
-1. PDF Ingestion          2. Automated Dataset Creation       3. Optimized Fine-Tuning
-┌───────────────────┐     ┌───────────────────────────────┐     ┌────────────────────────┐
-│ Meditations.pdf   ├─────► Python Script (PyMuPDF, Regex)├─────► meditations_dataset.json │
-└───────────────────┘     │        ▲                      │     └────────────┬───────────┘
-                          │        │ Groq API Call        │                  │
-                          │        ▼                      │                  ▼
-                          │   (Llama 3 70B)               │     ┌────────────────────────┐
-                          └───────────────────────────────┘     │ Unsloth & PEFT (QLoRA) ├─────► Final Model
-                                                                └────────────────────────┘
-📝 Project Stages
-1. Data Ingestion & Automated Dataset Creation
-The foundation of any good model is its data. The raw text of Meditations was extracted from a PDF, cleaned using regex to remove artifacts, and split into manageable chunks.
-To create the instruction-following dataset, a robust two-step prompting strategy was employed:
-Each text chunk was sent to the Groq API (Llama 3 70B) with a prompt instructing it to generate a modern problem and a corresponding Stoic response, separated by a unique delimiter (<--->).
-The Python script then reliably parsed this plain text response, handling the final JSON structuring itself. This method proved far more resilient than asking the API to generate perfect JSON directly.
-2. Optimized Fine-Tuning with Unsloth
-Training was performed using the Unsloth library to maximize efficiency.
-Model: unsloth/llama-3-8b-bnb-4bit, a version of Llama 3-8B pre-quantized to 4-bits.
-Technique: QLoRA (Quantized Low-Rank Adaptation) was applied. This involves "freezing" the 8 billion parameters of the base model and only training a small set of adapter layers.
-Benefits: This approach resulted in a ~2.5x training speedup and ~50% less GPU memory usage, making it possible to fine-tune this powerful model on a free Google Colab instance.
-🚀 How to Use the Model
-To run inference with the fine-tuned model, you can use the following Python script. Ensure you have Unsloth and its dependencies installed.
+.
+├── .venv/                      # Virtual environment (ignored by .gitignore)
+├── finetuned_llama.../         # Output directory for the fine-tuned model (ignored)
+├── llama3_meditati.../         # Checkpoints from training (ignored)
+├── meditations_corpus.pdf      # The raw input book (not committed)
+├── dataset.py                  # Script to generate the training dataset
+├── finetune.ipynb              # Jupyter Notebook for fine-tuning the model
+├── meditations_finetune.json   # The final, structured dataset
+├── .gitignore                  # Specifies files for Git to ignore
+└── README.md                   # This file
+⚙️ Getting Started
+Follow these steps to replicate the project.
+Prerequisites
+Python 3.9+
+A GPU (NVIDIA T4 on Google Colab is sufficient)
+A Groq API key for data generation
+Step 1: Create the Dataset
+The first step is to generate the meditations_finetune.json file from the source PDF.
+Place the PDF version of Meditations in the root directory and name it meditations_corpus.pdf.
+Open dataset.py and paste your Groq API key into the GROQ_API_KEY variable.
+Run the script from your terminal:
 code
-Python
-import torch
-from unsloth import FastLanguageModel
-from transformers import pipeline
-
-# Load your fine-tuned model
-# NOTE: Replace "outputs" with the path where your final model adapters are saved.
-model, tokenizer = FastLanguageModel.from_pretrained(
-    model_name = "outputs", # YOUR MODEL HERE
-    max_seq_length = 2048,
-    dtype = None,
-    load_in_4bit = True,
-)
-
-# Define the prompt format (must be identical to training)
-prompt_format = """Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.
-
-### Instruction:
-{}
-
-### Input:
-{}
-
-### Response:
-{}"""
-
-# --- Chat with the Philosopher ---
-pipe = pipeline("text-generation", model=model, tokenizer=tokenizer)
-
-modern_problem = "I got into a petty argument with a friend and I can't let it go."
-
-prompt = prompt_format.format(
-    "You are the philosopher Marcus Aurelius. Analyze the user's problem from a Stoic perspective and offer guidance in your authentic voice.",
-    modern_problem,
-    "" # Empty for generation
-)
-
-outputs = pipe(prompt, max_new_tokens=256, do_sample=True, temperature=0.7)
-print(outputs['generated_text'].split("### Response:").strip())```
-
-## 💡 Challenges & Learnings
-
-*   **Challenge:** The external API (Groq) was unreliable when tasked with generating perfectly formatted JSON, often returning malformed responses that broke the data pipeline.
-*   **Learning:** The solution was to simplify the AI's task. By prompting for simple, delimited text and handling the JSON structuring in Python, I created a more robust and fault-tolerant system. This highlights the principle of assigning tasks to the components best suited for them.
-
-*   **Challenge:** The initial PDF parsing treated the entire book as one large, unusable chunk of text.
-*   **Learning:** This emphasized the importance of data granularity. Implementing a proper chunking strategy before processing was crucial for providing the API with appropriately sized and meaningful contexts.
-
-## 🔮 Future Work
-
-*   **Build an Interactive UI:** Develop a simple web interface using Gradio or Streamlit to allow users to easily chat with the philosopher.
-*   **Expand the Pantheon:** Fine-tune models on the works of other philosophers (e.g., Nietzsche, Plato) to create a "Council of Thinkers."
-*   **Quantitative Evaluation:** Implement an evaluation framework using another powerful LLM (like GPT-4) as a "judge" to score the philosophical coherence of the model's responses.
-
-## License
-
-This project is licensed under the [MIT License](LICENSE).
+Bash
+python dataset.py
+This will create the meditations_finetune.json file, containing the ~172 training examples.
+Step 2: Fine-Tune the Model
+Now, you can run the fine-tuning process using the Jupyter Notebook.
+If using Google Colab: Upload finetune.ipynb and the generated meditations_finetune.json to your Colab environment.
+If running locally: Ensure you have a compatible GPU and have installed the necessary libraries.
+Open finetune.ipynb and execute the cells in order. The notebook will:
+Install Unsloth and all dependencies.
+Load the base Llama 3-8B model in 4-bit precision.
+Apply LoRA adapters.
+Load your custom JSON dataset.
+Run the training process.
+Save the final model adapters to an output directory (e.g., finetuned_llama...).
+Step 3: Run Inference
+The final cells in finetune.ipynb demonstrate how to load your new, fine-tuned model and chat with it. You can modify the modern_problem variable to ask it for advice on any topic.
+💡 Challenges & Learnings
+Challenge: The external API (Groq) was unreliable when tasked with generating perfectly formatted JSON.
+Learning: The solution was to simplify the AI's task. By prompting for simple, delimited text (<--->) and handling the JSON structuring in Python (dataset.py), the data pipeline became far more robust.
+Challenge: Initial attempts at parsing the PDF resulted in one giant, unusable chunk of text.
+Learning: This emphasized the importance of data granularity. Implementing a proper chunking strategy was crucial for providing the API with appropriately sized and meaningful contexts.
+🔮 Future Work
+Build an Interactive UI: Develop a simple web interface using Gradio or Streamlit to allow users to easily chat with the philosopher.
+Expand the Pantheon: Fine-tune models on the works of other philosophers (e.g., Nietzsche, Plato) to create a "Council of Thinkers."
+Quantitative Evaluation: Implement an evaluation framework using another powerful LLM (like GPT-4) as a "judge" to score the philosophical coherence of the model's responses.
+License
+This project is licensed under the MIT License.
+code
+Code
