@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+.venv
+.env
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Output directories
+finetuned_llama*/
+llama3_meditation*/
+outputs/
+
+# IDE files
+.vscode/
+.idea/
